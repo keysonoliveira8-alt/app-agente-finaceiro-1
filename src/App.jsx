@@ -65,7 +65,7 @@ const seedGoals = [
 // Endereço do backend (server.js) publicado e id do usuário logado.
 // Troque pelo endereço real e pela integração de login quando existirem.
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "https://SEU-BACKEND.exemplo.com";
-const USER_ID = "const USER_ID = "00000000-0000-0000-0000-000000000001";
+const USER_ID = "00000000-0000-0000-0000-000000000001";
 
 export default function AgenteFinanceiro() {
   const [dark, setDark] = useState(true);
