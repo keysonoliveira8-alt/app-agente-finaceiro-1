@@ -6,7 +6,7 @@ import {
 import {
   Wallet, ArrowDownCircle, ArrowUpCircle, PiggyBank, Target, Home,
   PlusCircle, MinusCircle, BarChart3, Moon, Sun, Sparkles, Trash2,
-  TrendingUp, TrendingDown, Car, Plane, ShieldCheck, Smartphone,
+  TrendingUp, TrendingDown, Car, Plane, ShieldCheck, Smartphone,Pencil,
   MessageCircle, Send, Bot, Crown, Check, Lock,
 } from "lucide-react";
 
@@ -458,7 +458,7 @@ function Metas({ c, goals, onAdd, onBump, onEdit, onRemove, dark }) {
                     <div style={{ fontSize: 11, color: c.muted }}>{money(g.guardado)} de {money(g.alvo)}</div>
                   </div>
                   <button onClick={() => startEdit(g)} style={{ background: "none", border: "none", cursor: "pointer", padding: 6 }}>
-                    <Edit2 size={16} color={c.muted} />
+                    <Pencil size={16} color={c.muted} />
                   </button>
                   <button onClick={() => onRemove(g.id)} style={{ background: "none", border: "none", cursor: "pointer", padding: 6 }}>
                     <Trash2 size={16} color={PALETTE.red} />
