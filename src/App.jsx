@@ -117,7 +117,8 @@ export default function AgenteFinanceiro() {
   const removeIncome = (id) => setIncomes((prev) => prev.filter((i) => i.id !== id));
   const removeExpense = (id) => setExpenses((prev) => prev.filter((i) => i.id !== id));
   const bumpGoal = (id, amount) => setGoals((prev) => prev.map((g) => g.id === id ? { ...g, guardado: Math.min(g.alvo, g.guardado + amount) } : g));
-
+const editGoal = (id, changes) => setGoals((prev) => prev.map((g) => g.id === id ? { ...g, ...changes } : g));
+const removeGoal = (id) => setGoals((prev) => prev.filter((g) => g.id !== id));
   return (
     <div style={{ minHeight: "100vh", background: c.bg, color: c.text, fontFamily: "'Inter', system-ui, sans-serif", transition: "background .3s,color .3s" }}>
       <style>{`
@@ -153,7 +154,7 @@ export default function AgenteFinanceiro() {
         )}
         {tab === "entradas" && <ListaEntradas c={c} incomes={incomes} onAdd={addIncome} onRemove={removeIncome} dark={dark} />}
         {tab === "saidas" && <ListaSaidas c={c} expenses={expenses} onAdd={addExpense} onRemove={removeExpense} dark={dark} />}
-        {tab === "metas" && <Metas c={c} goals={goals} onAdd={addGoal} onBump={bumpGoal} dark={dark} />}
+        {tab === "metas" && <Metas c={c} goals={goals} onAdd={addGoal} onBump={bumpGoal} onEdit={editGoal} onRemove={removeGoal}dark={dark} />}
         {tab === "relatorios" && <Relatorios c={c} byCategory={byCategory} pieColors={pieColors} monthCompare={monthCompare} totalIncome={totalIncome} totalExpense={totalExpense} dark={dark} />}
         {tab === "assistente" && (
           plano === "premium"
