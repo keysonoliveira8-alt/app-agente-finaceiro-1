@@ -404,14 +404,29 @@ function RowList({ items, c, onRemove, sign, color, icon, iconMap }) {
 }
 
 // ---------- Metas ----------
-function Metas({ c, goals, onAdd, onBump, dark }) {
+function Metas({ c, goals, onAdd, onBump, onEdit, onRemove, dark }) {
   const [form, setForm] = useState({ nome: "", tipo: "Reserva de emergência", alvo: "", guardado: "" });
-  const inputStyle = { width: "100%", padding: "10px 12px", borderRadius: 12, border: `1px solid ${c.surface2}`, background: c.surface2, color: c.text, fontSize: 13, outline: "none" };
+  const [editingId, setEditingId] = useState(null);
+  const [editForm, setEditForm] = useState({ nome: "", alvo: "", guardado: "" });
+  const [addAmount, setAddAmount] = useState({});
+  const inputStyle = { width: "100%", padding: "10px 12px", borderRadius: 12, border: `1px solid ${c.surface2}`, background: c.surface2, color: c.text, fontSize: 14 };
+
   const submit = () => {
     if (!form.nome || !form.alvo) return;
     onAdd({ nome: form.nome, tipo: form.tipo, alvo: parseFloat(form.alvo), guardado: parseFloat(form.guardado || 0) });
     setForm({ nome: "", tipo: "Reserva de emergência", alvo: "", guardado: "" });
   };
+
+  const startEdit = (g) => {
+    setEditingId(g.id);
+    setEditForm({ nome: g.nome, alvo: g.alvo, guardado: g.guardado });
+  };
+
+  const saveEdit = (id) => {
+    onEdit(id, { nome: editForm.nome, alvo: parseFloat(editForm.alvo), guardado: parseFloat(editForm.guardado) });
+    setEditingId(null);
+  };
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       {goals.map((g) => {
@@ -419,27 +434,65 @@ function Metas({ c, goals, onAdd, onBump, dark }) {
         const Icon = GOAL_ICONS[g.tipo] || Target;
         const restante = Math.max(0, g.alvo - g.guardado);
         const mesesEst = restante > 0 ? Math.max(1, Math.ceil(restante / 500)) : 0;
+        const isEditing = editingId === g.id;
         return (
           <Card c={c} key={g.id}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
-              <div style={{ width: 36, height: 36, borderRadius: 12, background: `${PALETTE.purple}22`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <Icon size={18} color={PALETTE.purple} />
+            {isEditing ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <input style={inputStyle} value={editForm.nome} onChange={(e) => setEditForm({ ...editForm, nome: e.target.value })} placeholder="Nome da meta" />
+                <input style={inputStyle} type="number" value={editForm.alvo} onChange={(e) => setEditForm({ ...editForm, alvo: e.target.value })} placeholder="Valor da meta (R$)" />
+                <input style={inputStyle} type="number" value={editForm.guardado} onChange={(e) => setEditForm({ ...editForm, guardado: e.target.value })} placeholder="Já guardado (R$)" />
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button onClick={() => saveEdit(g.id)} style={{ flex: 1, background: PALETTE.purple, border: "none", borderRadius: 10, padding: "10px", color: "#fff", fontWeight: 600, cursor: "pointer" }}>Salvar</button>
+                  <button onClick={() => setEditingId(null)} style={{ flex: 1, background: c.surface2, border: "none", borderRadius: 10, padding: "10px", color: c.text, cursor: "pointer" }}>Cancelar</button>
+                </div>
               </div>
-              <div>
-                <div style={{ fontWeight: 600, fontSize: 14 }}>{g.nome}</div>
-                <div style={{ fontSize: 11, color: c.muted }}>{money(g.guardado)} de {money(g.alvo)}</div>
-              </div>
-            </div>
-            <div style={{ height: 8, borderRadius: 99, background: c.surface2, overflow: "hidden", marginBottom: 8 }}>
-              <div style={{ height: "100%", width: `${pct}%`, background: `linear-gradient(90deg, ${PALETTE.purple}, ${PALETTE.green})` }} />
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: c.muted, marginBottom: 10 }}>
-              <span>{pct}% concluído</span>
-              <span>{mesesEst > 0 ? `~${mesesEst} meses para concluir` : "Meta concluída 🎉"}</span>
-            </div>
-            <button onClick={() => onBump(g.id, 100)} style={{ background: c.surface2, border: "none", borderRadius: 10, padding: "8px 12px", fontSize: 12, color: c.text, cursor: "pointer" }}>
-              + Guardar R$100
-            </button>
+            ) : (
+              <>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+                  <div style={{ width: 36, height: 36, borderRadius: 12, background: `${PALETTE.purple}22`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <Icon size={18} color={PALETTE.purple} />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 600, fontSize: 14 }}>{g.nome}</div>
+                    <div style={{ fontSize: 11, color: c.muted }}>{money(g.guardado)} de {money(g.alvo)}</div>
+                  </div>
+                  <button onClick={() => startEdit(g)} style={{ background: "none", border: "none", cursor: "pointer", padding: 6 }}>
+                    <Edit2 size={16} color={c.muted} />
+                  </button>
+                  <button onClick={() => onRemove(g.id)} style={{ background: "none", border: "none", cursor: "pointer", padding: 6 }}>
+                    <Trash2 size={16} color={PALETTE.red} />
+                  </button>
+                </div>
+                <div style={{ height: 8, borderRadius: 99, background: c.surface2, overflow: "hidden", marginBottom: 8 }}>
+                  <div style={{ height: "100%", width: `${pct}%`, background: `linear-gradient(90deg, ${PALETTE.purple}, ${PALETTE.green})` }} />
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: c.muted, marginBottom: 10 }}>
+                  <span>{pct}% concluído</span>
+                  <span>{mesesEst > 0 ? `~${mesesEst} meses para concluir` : "Meta concluída 🎉"}</span>
+                </div>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <input
+                    style={{ ...inputStyle, flex: 1 }}
+                    type="number"
+                    placeholder="Valor (R$)"
+                    value={addAmount[g.id] || ""}
+                    onChange={(e) => setAddAmount({ ...addAmount, [g.id]: e.target.value })}
+                  />
+                  <button
+                    onClick={() => {
+                      const v = parseFloat(addAmount[g.id]);
+                      if (!v || v <= 0) return;
+                      onBump(g.id, v);
+                      setAddAmount({ ...addAmount, [g.id]: "" });
+                    }}
+                    style={{ background: c.surface2, border: "none", borderRadius: 12, padding: "10px 16px", color: c.text, cursor: "pointer", fontWeight: 600 }}
+                  >
+                    + Guardar
+                  </button>
+                </div>
+              </>
+            )}
           </Card>
         );
       })}
@@ -453,9 +506,7 @@ function Metas({ c, goals, onAdd, onBump, dark }) {
           </select>
           <input style={inputStyle} type="number" placeholder="Valor da meta (R$)" value={form.alvo} onChange={(e) => setForm({ ...form, alvo: e.target.value })} />
           <input style={inputStyle} type="number" placeholder="Já guardado (R$, opcional)" value={form.guardado} onChange={(e) => setForm({ ...form, guardado: e.target.value })} />
-          <button onClick={submit} style={{ background: PALETTE.purple, border: "none", borderRadius: 12, padding: "11px", color: "#fff", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>
-            Criar meta
-          </button>
+          <button onClick={submit} style={{ background: PALETTE.purple, border: "none", borderRadius: 12, padding: "12px", color: "#fff", fontWeight: 600, cursor: "pointer" }}>Criar meta</button>
         </div>
       </Card>
     </div>
