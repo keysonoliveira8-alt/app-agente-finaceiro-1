@@ -1,4 +1,6 @@
 import React, { useState, useMemo, useRef, useEffect } from "react";
+import Auth from './Auth';
+import { supabase } from './supabaseClient';
 import {
   ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis,
   Tooltip, LineChart, Line, CartesianGrid,
@@ -68,6 +70,19 @@ const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "https://SEU-BACKEND.exe
 const USER_ID = "00000000-0000-0000-0000-000000000001";
 
 export default function AgenteFinanceiro() {
+  const [session, setSession] = useState(null);
+const [loadingSession, setLoadingSession] = useState(true);
+
+useEffect(() => {
+  supabase.auth.getSession().then(({ data: { session } }) => {
+    setSession(session);
+    setLoadingSession(false);
+  });
+  const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    setSession(session);
+  });
+  return () => subscription.unsubscribe();
+}, []);
   const [dark, setDark] = useState(true);
   const [tab, setTab] = useState("dashboard");
   const [plano, setPlano] = useState("gratuito"); // "gratuito" | "premium"
@@ -119,6 +134,20 @@ export default function AgenteFinanceiro() {
   const bumpGoal = (id, amount) => setGoals((prev) => prev.map((g) => g.id === id ? { ...g, guardado: Math.min(g.alvo, g.guardado + amount) } : g));
 const editGoal = (id, changes) => setGoals((prev) => prev.map((g) => g.id === id ? { ...g, ...changes } : g));
 const removeGoal = (id) => setGoals((prev) => prev.filter((g) => g.id !== id));
+  if (loadingSession) {
+  return (
+    <div style={{ minHeight: "100vh", background: dark ? PALETTE.bgDark : PALETTE.bgLight, display: "flex", alignItems: "center", justifyContent: "center", color: dark ? PALETTE.textDark : PALETTE.textLight }}>
+      Carregando...
+    </div>
+  );
+}
+
+if (!session) {
+  const c = dark
+    ? { bg: PALETTE.bgDark, surface: PALETTE.surfaceDark, surface2: PALETTE.surfaceDark2, text: PALETTE.textDark, muted: PALETTE.textMutedDark }
+    : { bg: PALETTE.bgLight, surface: PALETTE.surfaceLight, surface2: PALETTE.surfaceLight2, text: PALETTE.textLight, muted: PALETTE.textMutedLight };
+  return <Auth c={c} dark={dark} />;
+}
   return (
     <div style={{ minHeight: "100vh", background: c.bg, color: c.text, fontFamily: "'Inter', system-ui, sans-serif", transition: "background .3s,color .3s" }}>
       <style>{`
@@ -161,7 +190,7 @@ const removeGoal = (id) => setGoals((prev) => prev.filter((g) => g.id !== id));
             ? <AssistenteIA c={c} dark={dark} balance={balance} addIncome={addIncome} addExpense={addExpense} />
             : <Paywall c={c} onIrParaAssinatura={() => setTab("assinatura")} />
         )}
-        {tab === "assinatura" && <Assinatura c={c} dark={dark} plano={plano} setPlano={setPlano} />}
+        {tab === "assinatura" && <Assinatura c={c} dark={dark} plano={plano} setPlano={setPlano} session={session} />}
       </div>
 
       {/* Bottom nav */}
@@ -591,7 +620,7 @@ function AssistenteIA({ c, dark, balance, addIncome, addExpense }) {
       const resp = await fetch(`${BACKEND_URL}/api/assistente`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: USER_ID, texto }),
+        body: JSON.stringify({ userId: session.user.id, texto }),
       });
       const data = await resp.json();
 
@@ -701,7 +730,7 @@ const PLANOS = [
   },
 ];
 
-function Assinatura({ c, dark, plano, setPlano }) {
+function Assinatura({ c, dark, plano, setPlano, session }) {
   const [processando, setProcessando] = useState(false);
 
   const assinar = async (id) => {
@@ -713,7 +742,7 @@ function Assinatura({ c, dark, plano, setPlano }) {
       const resp = await fetch(`${BACKEND_URL}/api/checkout`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: USER_ID }),
+        body: JSON.stringify({ userId: session.user.id }),
       });
       const data = await resp.json();
       if (data.url) {
