@@ -69,12 +69,6 @@ export default function Auth({ c, dark }) {
           )}
         </div>
 
-        {modo === 'login' && (
-          <div style={{ textAlign: 'center', marginTop: 10, fontSize: 12.5, color: c.muted }}>
-            <span onClick={recuperarSenha} style={{ color: '#8B5CF6', cursor: 'pointer' }}>Esqueci minha senha</span>
-          </div>
-        )}
-
         <input style={inputStyle} type="email" placeholder="E-mail" value={email} onChange={(e) => setEmail(e.target.value)} />
         <input style={inputStyle} type="password" placeholder="Senha (min. 6 caracteres)" value={senha} onChange={(e) => setSenha(e.target.value)} />
 
@@ -88,6 +82,12 @@ export default function Auth({ c, dark }) {
         >
           {carregando ? 'Aguarde...' : modo === 'login' ? 'Entrar' : 'Criar conta'}
         </button>
+
+        {modo === 'login' && (
+          <div style={{ textAlign: 'center', marginTop: 14, fontSize: 12.5, color: c.muted }}>
+            <span onClick={recuperarSenha} style={{ color: '#8B5CF6', cursor: 'pointer' }}>Esqueci minha senha</span>
+          </div>
+        )}
       </div>
     </div>
   );
