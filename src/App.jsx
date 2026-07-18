@@ -94,6 +94,10 @@ useEffect(() => {
     ? { bg: PALETTE.bgDark, surface: PALETTE.surfaceDark, surface2: PALETTE.surfaceDark2, text: PALETTE.textDark, muted: PALETTE.textMutedDark }
     : { bg: PALETTE.bgLight, surface: PALETTE.surfaceLight, surface2: PALETTE.surfaceLight2, text: PALETTE.textLight, muted: PALETTE.textMutedLight };
 
+  const nomeUsuario = session?.user?.user_metadata?.nome_completo
+    || session?.user?.user_metadata?.nome
+    || "";
+
   const totalIncome = useMemo(() => incomes.reduce((s, i) => s + i.valor, 0), [incomes]);
   const totalExpense = useMemo(() => expenses.reduce((s, e) => s + e.valor, 0), [expenses]);
   const balance = totalIncome - totalExpense;
@@ -160,6 +164,13 @@ if (!session) {
         input, select { font-family:'Inter',sans-serif; }
         ::-webkit-scrollbar { width: 8px; } ::-webkit-scrollbar-thumb { background:${PALETTE.purpleDeep}; border-radius:8px; }
       `}</style>
+
+      {/* Saudação */}
+      {nomeUsuario && (
+        <div style={{ padding: "18px 24px 0", color: "#fff" }}>
+          <span className="display" style={{ fontSize: 20, fontWeight: 700 }}>Olá, {nomeUsuario}</span>
+        </div>
+      )}
 
       {/* Topbar */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "18px 24px", position: "sticky", top: 0, background: c.bg, zIndex: 10, borderBottom: `1px solid ${c.surface2}` }}>
@@ -818,4 +829,4 @@ function Assinatura({ c, dark, plano, setPlano, session }) {
       </div>
     </div>
   );
-}
+      }
