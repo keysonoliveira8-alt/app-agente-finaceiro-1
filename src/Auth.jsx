@@ -3,13 +3,15 @@ import { supabase } from './supabaseClient';
 
 export default function Auth({ c, dark }) {
   const [modo, setModo] = useState('login');
+  const [nome, setNome] = useState('');
+  const [sobrenome, setSobrenome] = useState('');
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [erro, setErro] = useState('');
   const [carregando, setCarregando] = useState(false);
   const [mensagem, setMensagem] = useState('');
 
-  const inputStyle = { width: '100%', padding: '12px 14px', borderRadius: 12, border: `1px solid ${c.surface2}`, background: c.surface2, color: c.text, fontSize: 15 };
+  const inputStyle = { width: '100%', padding: '12px 14px', borderRadius: 12, border: `1px solid ${c.surface2}`, background: c.surface2, color: c.text, fontSize: 15, marginBottom: 14 };
 
   const recuperarSenha = async () => {
     setErro('');
@@ -33,6 +35,10 @@ export default function Auth({ c, dark }) {
   const submit = async () => {
     setErro('');
     setMensagem('');
+    if (modo === 'cadastro' && (!nome || !sobrenome)) {
+      setErro('Preencha nome e sobrenome.');
+      return;
+    }
     if (!email || !senha) {
       setErro('Preencha e-mail e senha.');
       return;
@@ -47,7 +53,17 @@ export default function Auth({ c, dark }) {
         const { error } = await supabase.auth.signInWithPassword({ email, password: senha });
         if (error) throw error;
       } else {
-        const { error } = await supabase.auth.signUp({ email, password: senha });
+        const { error } = await supabase.auth.signUp({
+          email,
+          password: senha,
+          options: {
+            data: {
+              nome: nome,
+              sobrenome: sobrenome,
+              nome_completo: `${nome} ${sobrenome}`
+            }
+          }
+        });
         if (error) throw error;
         setMensagem('Conta criada! Verifique seu e-mail para confirmar o cadastro antes de fazer login.');
       }
@@ -61,13 +77,20 @@ export default function Auth({ c, dark }) {
   return (
     <div style={{ minHeight: '100vh', background: c.bg, color: c.text, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
       <div style={{ width: '100%', maxWidth: 380, background: c.surface, borderRadius: 20, padding: 28 }}>
-        <div style={{ textAlign: 'center', marginTop: 16, fontSize: 13, color: c.muted }}>
+        <div style={{ textAlign: 'center', marginTop: 16, marginBottom: 20, fontSize: 13, color: c.muted }}>
           {modo === 'login' ? (
             <>Não tem conta? <span onClick={() => { setModo('cadastro'); setErro(''); setMensagem(''); }} style={{ color: '#8B5CF6', cursor: 'pointer', fontWeight: 600 }}>Criar conta</span></>
           ) : (
             <>Já tem conta? <span onClick={() => { setModo('login'); setErro(''); setMensagem(''); }} style={{ color: '#8B5CF6', cursor: 'pointer', fontWeight: 600 }}>Entrar</span></>
           )}
         </div>
+
+        {modo === 'cadastro' && (
+          <>
+            <input style={inputStyle} type="text" placeholder="Nome" value={nome} onChange={(e) => setNome(e.target.value)} />
+            <input style={inputStyle} type="text" placeholder="Sobrenome" value={sobrenome} onChange={(e) => setSobrenome(e.target.value)} />
+          </>
+        )}
 
         <input style={inputStyle} type="email" placeholder="E-mail" value={email} onChange={(e) => setEmail(e.target.value)} />
         <input style={inputStyle} type="password" placeholder="Senha (min. 6 caracteres)" value={senha} onChange={(e) => setSenha(e.target.value)} />
