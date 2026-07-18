@@ -47,23 +47,6 @@ const GOAL_ICONS = { Carro: Car, Casa: Home, Viagem: Plane, "Reserva de emergên
 
 const money = (v) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
-const seedIncomes = [
-  { id: 1, valor: 4200, data: "2026-07-01", categoria: "Salário", obs: "Salário mensal" },
-  { id: 2, valor: 350, data: "2026-07-05", categoria: "Freelances", obs: "Projeto extra" },
-];
-const seedExpenses = [
-  { id: 1, valor: 620, data: "2026-07-02", categoria: "Mercado", forma: "Débito", obs: "Compra do mês" },
-  { id: 2, valor: 89, data: "2026-07-03", categoria: "Internet", forma: "Pix", obs: "" },
-  { id: 3, valor: 240, data: "2026-07-06", categoria: "Alimentação", forma: "Crédito", obs: "Restaurantes" },
-  { id: 4, valor: 180, data: "2026-07-07", categoria: "Combustível", forma: "Débito", obs: "" },
-  { id: 5, valor: 65, data: "2026-07-08", categoria: "Lazer", forma: "Pix", obs: "Cinema" },
-  { id: 6, valor: 45, data: "2026-07-09", categoria: "Assinaturas", forma: "Crédito", obs: "Streaming" },
-];
-const seedGoals = [
-  { id: 1, nome: "Reserva de emergência", tipo: "Reserva de emergência", alvo: 10000, guardado: 4200 },
-  { id: 2, nome: "Viagem para o litoral", tipo: "Viagem", alvo: 5000, guardado: 1350 },
-];
-
 // Textos de Termos de serviço e Política de privacidade.
 const TERMOS_TEXTO = `TERMOS DE SERVIÇO
 
@@ -155,9 +138,9 @@ useEffect(() => {
   const [tab, setTab] = useState("dashboard");
   const [menuAberto, setMenuAberto] = useState(false);
   const [plano, setPlano] = useState("gratuito"); // "gratuito" | "premium"
-  const [incomes, setIncomes] = useState(seedIncomes);
-  const [expenses, setExpenses] = useState(seedExpenses);
-  const [goals, setGoals] = useState(seedGoals);
+  const [incomes, setIncomes] = useState([]);
+  const [expenses, setExpenses] = useState([]);
+  const [goals, setGoals] = useState([]);
 
   const c = dark
     ? { bg: PALETTE.bgDark, surface: PALETTE.surfaceDark, surface2: PALETTE.surfaceDark2, text: PALETTE.textDark, muted: PALETTE.textMutedDark }
@@ -190,8 +173,8 @@ useEffect(() => {
   }, [expenses]);
 
   const monthCompare = [
-    { mes: "Mai", gasto: 2100 },
-    { mes: "Jun", gasto: 2480 },
+    { mes: "Mai", gasto: 0 },
+    { mes: "Jun", gasto: 0 },
     { mes: "Jul", gasto: totalExpense },
   ];
 
