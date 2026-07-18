@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { supabase } from './supabaseClient';
+import { Eye, EyeOff } from 'lucide-react';
 
 export default function Auth({ c, dark }) {
   const [modo, setModo] = useState('login');
@@ -7,11 +8,17 @@ export default function Auth({ c, dark }) {
   const [sobrenome, setSobrenome] = useState('');
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
+  const [confirmarSenha, setConfirmarSenha] = useState('');
+  const [mostrarSenha, setMostrarSenha] = useState(false);
+  const [mostrarConfirmarSenha, setMostrarConfirmarSenha] = useState(false);
   const [erro, setErro] = useState('');
   const [carregando, setCarregando] = useState(false);
   const [mensagem, setMensagem] = useState('');
 
   const inputStyle = { width: '100%', padding: '12px 14px', borderRadius: 12, border: `1px solid ${c.surface2}`, background: c.surface2, color: c.text, fontSize: 15, marginBottom: 14 };
+  const inputSenhaWrapStyle = { position: 'relative', marginBottom: 14 };
+  const inputSenhaStyle = { ...inputStyle, marginBottom: 0, paddingRight: 44 };
+  const olhoBtnStyle = { position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'transparent', border: 'none', cursor: 'pointer', color: c.muted, display: 'flex', alignItems: 'center', padding: 4 };
 
   const recuperarSenha = async () => {
     setErro('');
@@ -45,6 +52,10 @@ export default function Auth({ c, dark }) {
     }
     if (senha.length < 6) {
       setErro('A senha precisa ter pelo menos 6 caracteres.');
+      return;
+    }
+    if (modo === 'cadastro' && senha !== confirmarSenha) {
+      setErro('As senhas não coincidem.');
       return;
     }
     setCarregando(true);
@@ -93,7 +104,34 @@ export default function Auth({ c, dark }) {
         )}
 
         <input style={inputStyle} type="email" placeholder="E-mail" value={email} onChange={(e) => setEmail(e.target.value)} />
-        <input style={inputStyle} type="password" placeholder="Senha (min. 6 caracteres)" value={senha} onChange={(e) => setSenha(e.target.value)} />
+
+        <div style={inputSenhaWrapStyle}>
+          <input
+            style={inputSenhaStyle}
+            type={mostrarSenha ? 'text' : 'password'}
+            placeholder="Senha (min. 6 caracteres)"
+            value={senha}
+            onChange={(e) => setSenha(e.target.value)}
+          />
+          <button type="button" onClick={() => setMostrarSenha((m) => !m)} style={olhoBtnStyle} aria-label={mostrarSenha ? 'Ocultar senha' : 'Mostrar senha'}>
+            {mostrarSenha ? <EyeOff size={18} /> : <Eye size={18} />}
+          </button>
+        </div>
+
+        {modo === 'cadastro' && (
+          <div style={inputSenhaWrapStyle}>
+            <input
+              style={inputSenhaStyle}
+              type={mostrarConfirmarSenha ? 'text' : 'password'}
+              placeholder="Confirmar senha"
+              value={confirmarSenha}
+              onChange={(e) => setConfirmarSenha(e.target.value)}
+            />
+            <button type="button" onClick={() => setMostrarConfirmarSenha((m) => !m)} style={olhoBtnStyle} aria-label={mostrarConfirmarSenha ? 'Ocultar senha' : 'Mostrar senha'}>
+              {mostrarConfirmarSenha ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+          </div>
+        )}
 
         {erro && <div style={{ color: '#F87171', fontSize: 13, marginBottom: 12 }}>{erro}</div>}
         {mensagem && <div style={{ color: '#34D399', fontSize: 13, marginBottom: 12 }}>{mensagem}</div>}
