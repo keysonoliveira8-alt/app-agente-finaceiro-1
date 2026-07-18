@@ -17,7 +17,7 @@ export default function Auth({ c, dark }) {
 
   const inputStyle = { width: '100%', padding: '12px 14px', borderRadius: 12, border: `1px solid ${c.surface2}`, background: c.surface2, color: c.text, fontSize: 15, marginBottom: 14 };
   const inputSenhaWrapStyle = { position: 'relative', marginBottom: 14 };
-  const inputSenhaStyle = { ...inputStyle, marginBottom: 0, paddingRight: 44 };
+  const inputSenhaStyle = { ...inputStyle, marginBottom: 0, paddingRight: 44, outline: 'none' };
   const olhoBtnStyle = { position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'transparent', border: 'none', cursor: 'pointer', color: c.muted, display: 'flex', alignItems: 'center', padding: 4 };
 
   const recuperarSenha = async () => {
@@ -103,7 +103,7 @@ export default function Auth({ c, dark }) {
           </>
         )}
 
-        <input style={inputStyle} type="email" placeholder="E-mail" value={email} onChange={(e) => setEmail(e.target.value)} />
+        <input style={inputStyle} type="email" placeholder="E-mail" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" />
 
         <div style={inputSenhaWrapStyle}>
           <input
@@ -112,6 +112,7 @@ export default function Auth({ c, dark }) {
             placeholder="Senha (min. 6 caracteres)"
             value={senha}
             onChange={(e) => setSenha(e.target.value)}
+            autoComplete={modo === 'login' ? 'current-password' : 'new-password'}
           />
           <button type="button" onClick={() => setMostrarSenha((m) => !m)} style={olhoBtnStyle} aria-label={mostrarSenha ? 'Ocultar senha' : 'Mostrar senha'}>
             {mostrarSenha ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -126,6 +127,7 @@ export default function Auth({ c, dark }) {
               placeholder="Confirmar senha"
               value={confirmarSenha}
               onChange={(e) => setConfirmarSenha(e.target.value)}
+              autoComplete="new-password"
             />
             <button type="button" onClick={() => setMostrarConfirmarSenha((m) => !m)} style={olhoBtnStyle} aria-label={mostrarConfirmarSenha ? 'Ocultar senha' : 'Mostrar senha'}>
               {mostrarConfirmarSenha ? <EyeOff size={18} /> : <Eye size={18} />}
