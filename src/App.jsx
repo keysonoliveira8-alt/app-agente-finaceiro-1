@@ -299,12 +299,20 @@ if (!session) {
         )}
         {tab === "entradas" && <ListaEntradas c={c} incomes={incomes} onAdd={addIncome} onRemove={removeIncome} dark={dark} />}
         {tab === "saidas" && <ListaSaidas c={c} expenses={expenses} onAdd={addExpense} onRemove={removeExpense} dark={dark} />}
-        {tab === "metas" && <Metas c={c} goals={goals} onAdd={addGoal} onBump={bumpGoal} onEdit={editGoal} onRemove={removeGoal}dark={dark} />}
-        {tab === "relatorios" && <Relatorios c={c} byCategory={byCategory} pieColors={pieColors} monthCompare={monthCompare} totalIncome={totalIncome} totalExpense={totalExpense} dark={dark} />}
+        {tab === "metas" && (
+          plano === "premium"
+            ? <Metas c={c} goals={goals} onAdd={addGoal} onBump={bumpGoal} onEdit={editGoal} onRemove={removeGoal} dark={dark} plano={plano} onIrParaAssinatura={() => setTab("assinatura")} />
+            : <Paywall c={c} onIrParaAssinatura={() => setTab("assinatura")} mensagem="As Metas financeiras são exclusivas do plano Premium. Assine para criar e acompanhar suas metas." />
+        )}
+        {tab === "relatorios" && (
+          plano === "premium"
+            ? <Relatorios c={c} byCategory={byCategory} pieColors={pieColors} monthCompare={monthCompare} totalIncome={totalIncome} totalExpense={totalExpense} dark={dark} />
+            : <Paywall c={c} onIrParaAssinatura={() => setTab("assinatura")} mensagem="Os Relatórios avançados são exclusivos do plano Premium. Assine para ver comparativos, exportação em PDF/Excel e mais." />
+        )}
         {tab === "assistente" && (
           plano === "premium"
             ? <AssistenteIA c={c} dark={dark} balance={balance} addIncome={addIncome} addExpense={addExpense} />
-            : <Paywall c={c} onIrParaAssinatura={() => setTab("assinatura")} />
+            : <Paywall c={c} onIrParaAssinatura={() => setTab("assinatura")} mensagem="O Assistente com IA é exclusivo do plano Premium. Assine para registrar gastos por texto ou voz." />
         )}
         {tab === "assinatura" && <Assinatura c={c} dark={dark} plano={plano} setPlano={setPlano} session={session} />}
         {tab === "termos" && <PaginaLegal c={c} titulo="Termos de serviço" onVoltar={() => setTab("dashboard")} texto={TERMOS_TEXTO} />}
@@ -571,7 +579,7 @@ function RowList({ items, c, onRemove, sign, color, icon, iconMap }) {
 }
 
 // ---------- Metas ----------
-function Metas({ c, goals, onAdd, onBump, onEdit, onRemove, dark }) {
+function Metas({ c, goals, onAdd, onBump, onEdit, onRemove, dark, plano, onIrParaAssinatura }) {
   const [form, setForm] = useState({ nome: "", tipo: "Reserva de emergência", alvo: "", guardado: "" });
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm] = useState({ nome: "", alvo: "", guardado: "" });
@@ -825,7 +833,7 @@ function AssistenteIA({ c, dark, balance, addIncome, addExpense }) {
 }
 
 // ---------- Paywall (bloqueio de recurso premium) ----------
-function Paywall({ c, onIrParaAssinatura }) {
+function Paywall({ c, onIrParaAssinatura, mensagem }) {
   return (
     <Card c={c} style={{ textAlign: "center", padding: 32, marginTop: 40 }}>
       <div style={{ width: 52, height: 52, borderRadius: 16, background: `${PALETTE.purple}22`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px" }}>
@@ -833,7 +841,7 @@ function Paywall({ c, onIrParaAssinatura }) {
       </div>
       <div className="display" style={{ fontWeight: 700, fontSize: 16, marginBottom: 6 }}>Recurso Premium</div>
       <div style={{ fontSize: 13, color: c.muted, marginBottom: 18, lineHeight: 1.5 }}>
-        O Assistente com IA é exclusivo do plano Premium. Assine para registrar gastos por texto ou voz.
+        {mensagem || "Este recurso é exclusivo do plano Premium. Assine para desbloquear."}
       </div>
       <button onClick={onIrParaAssinatura} style={{ background: `linear-gradient(135deg, ${PALETTE.purple}, ${PALETTE.green})`, border: "none", borderRadius: 12, padding: "12px 20px", color: "#fff", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>
         Ver planos
@@ -849,7 +857,7 @@ const PLANOS = [
     nome: "Gratuito",
     preco: "R$0",
     periodo: "para sempre",
-    recursos: ["Cadastro de entradas e saídas", "Dashboard e gráficos básicos", "1 meta financeira"],
+    recursos: ["Cadastro de entradas e saídas", "Dashboard e gráficos básicos"],
   },
   {
     id: "premium",
@@ -859,8 +867,7 @@ const PLANOS = [
     recursos: [
       "Tudo do plano Gratuito",
       "Assistente com IA (texto e áudio)",
-      "Integração com WhatsApp",
-      "Metas ilimitadas",
+      "Metas financeiras ilimitadas",
       "Relatórios avançados + exportação PDF/Excel",
       "Alertas inteligentes de gastos",
     ],
