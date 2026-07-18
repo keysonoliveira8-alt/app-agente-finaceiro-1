@@ -15,8 +15,8 @@ export default function Auth({ c, dark }) {
   const [carregando, setCarregando] = useState(false);
   const [mensagem, setMensagem] = useState('');
 
-  const inputStyle = { width: '100%', padding: '12px 14px', borderRadius: 12, border: `1px solid ${c.surface2}`, background: c.surface2, color: c.text, fontSize: 15, marginBottom: 14 };
-  const inputSenhaWrapStyle = { position: 'relative', marginBottom: 14 };
+  const inputStyle = { width: '100%', padding: '12px 14px', borderRadius: 12, border: `1px solid ${c.surface2}`, background: c.surface2, color: c.text, fontSize: 15, marginBottom: 14, boxSizing: 'border-box' };
+  const inputSenhaWrapStyle = { position: 'relative', marginBottom: 14, width: '100%', boxSizing: 'border-box' };
   const inputSenhaStyle = { ...inputStyle, marginBottom: 0, paddingRight: 44, outline: 'none' };
   const olhoBtnStyle = { position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'transparent', border: 'none', cursor: 'pointer', color: c.muted, display: 'flex', alignItems: 'center', padding: 4 };
 
