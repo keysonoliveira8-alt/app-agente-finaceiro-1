@@ -9,7 +9,7 @@ import {
   Wallet, ArrowDownCircle, ArrowUpCircle, PiggyBank, Target, Home,
   PlusCircle, MinusCircle, BarChart3, Moon, Sun, Sparkles, Trash2,
   TrendingUp, TrendingDown, Car, Plane, ShieldCheck, Smartphone,Pencil,
-  MessageCircle, Send, Bot, Crown, Check, Lock,
+  MessageCircle, Send, Bot, Crown, Check, Lock, Settings, LogOut, FileText, ShieldAlert,
 } from "lucide-react";
 
 // ---------- Tema ----------
@@ -64,6 +64,74 @@ const seedGoals = [
   { id: 2, nome: "Viagem para o litoral", tipo: "Viagem", alvo: 5000, guardado: 1350 },
 ];
 
+// Textos de Termos de serviço e Política de privacidade.
+const TERMOS_TEXTO = `TERMOS DE SERVIÇO
+
+Última atualização: 18/07/2026
+
+1. Aceitação dos termos
+Ao criar uma conta ou usar o Agente Financeiro, você concorda com estes Termos de Serviço e com a nossa Política de Privacidade. Se não concordar, não utilize o aplicativo.
+
+2. Descrição do serviço
+O Agente Financeiro é uma ferramenta de organização financeira pessoal que permite registrar entradas, saídas, metas financeiras e acompanhar relatórios. O plano Premium oferece recursos adicionais, incluindo assistente com inteligência artificial.
+
+3. Cadastro e conta
+Você é responsável por fornecer informações verdadeiras no cadastro e por manter a confidencialidade da sua senha. Você é responsável por todas as atividades realizadas na sua conta.
+
+4. Natureza do serviço
+O Agente Financeiro é uma ferramenta de organização e visualização de dados financeiros que você mesmo insere. Ele não é uma instituição financeira, não realiza transações bancárias reais e não substitui aconselhamento profissional de contabilidade, investimento ou finanças. As sugestões e dicas geradas pelo assistente com IA são informativas e não constituem recomendação financeira profissional.
+
+5. Assinatura e pagamento
+O plano gratuito oferece funcionalidades básicas. O plano Premium é cobrado periodicamente conforme o valor informado no momento da assinatura, processado por um provedor de pagamentos terceirizado (Stripe). Você pode cancelar a assinatura a qualquer momento; o cancelamento evita cobranças futuras, mas não gera reembolso automático de períodos já pagos, salvo exigência legal em contrário.
+
+6. Uso adequado
+Você concorda em não usar o aplicativo para fins ilícitos, não tentar acessar dados de outros usuários e não realizar engenharia reversa ou explorar vulnerabilidades do sistema.
+
+7. Limitação de responsabilidade
+O Agente Financeiro é fornecido "como está". Não garantimos que o serviço será ininterrupto ou livre de erros. Não nos responsabilizamos por decisões financeiras tomadas com base nas informações do aplicativo.
+
+8. Encerramento de conta
+Você pode encerrar sua conta a qualquer momento. Podemos suspender ou encerrar contas que violem estes termos.
+
+9. Alterações nos termos
+Podemos atualizar estes termos periodicamente. Mudanças significativas serão comunicadas dentro do aplicativo. O uso contínuo após alterações implica aceitação dos novos termos.
+
+10. Contato
+Dúvidas sobre estes termos podem ser enviadas para suporteagentefinanceiro@gmail.com.`;
+
+const PRIVACIDADE_TEXTO = `POLÍTICA DE PRIVACIDADE
+
+Última atualização: 18/07/2026
+
+1. Quais dados coletamos
+- Dados de cadastro: nome, sobrenome e e-mail.
+- Dados financeiros que você insere: entradas, saídas, categorias, formas de pagamento e metas.
+- Dados de uso do plano Premium, incluindo informações de assinatura processadas pelo Stripe.
+
+2. Como usamos seus dados
+Usamos seus dados exclusivamente para: autenticar seu acesso, exibir suas informações financeiras dentro do app, gerar relatórios e dicas personalizadas, e processar pagamentos de assinatura Premium.
+
+3. Onde seus dados são armazenados
+Seus dados são armazenados de forma segura utilizando o Supabase (banco de dados e autenticação). Pagamentos são processados pelo Stripe, que possui suas próprias políticas de segurança e privacidade.
+
+4. Compartilhamento de dados
+Não vendemos nem compartilhamos seus dados pessoais ou financeiros com terceiros para fins de publicidade. Seus dados podem ser compartilhados apenas com provedores essenciais ao funcionamento do serviço (como Supabase e Stripe) ou quando exigido por lei.
+
+5. Seus direitos (LGPD)
+Conforme a Lei Geral de Proteção de Dados (Lei nº 13.709/2018), você tem direito a: confirmar a existência de tratamento dos seus dados, acessar seus dados, corrigir dados incompletos ou desatualizados, solicitar a exclusão dos seus dados e da sua conta, e revogar seu consentimento a qualquer momento.
+
+6. Exclusão de conta
+Você pode solicitar a exclusão da sua conta e de todos os seus dados a qualquer momento pelo suporte do aplicativo, através do e-mail suporteagentefinanceiro@gmail.com.
+
+7. Segurança
+Adotamos medidas técnicas razoáveis para proteger seus dados contra acesso não autorizado, mas nenhum sistema é 100% seguro. Recomendamos usar uma senha forte e não compartilhá-la.
+
+8. Alterações nesta política
+Podemos atualizar esta política periodicamente. Mudanças significativas serão comunicadas dentro do aplicativo.
+
+9. Contato
+Dúvidas sobre esta política podem ser enviadas para suporteagentefinanceiro@gmail.com.`;
+
 // Endereço do backend (server.js) publicado e id do usuário logado.
 // Troque pelo endereço real e pela integração de login quando existirem.
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "https://SEU-BACKEND.exemplo.com";
@@ -85,6 +153,7 @@ useEffect(() => {
 }, []);
   const [dark, setDark] = useState(true);
   const [tab, setTab] = useState("dashboard");
+  const [menuAberto, setMenuAberto] = useState(false);
   const [plano, setPlano] = useState("gratuito"); // "gratuito" | "premium"
   const [incomes, setIncomes] = useState(seedIncomes);
   const [expenses, setExpenses] = useState(seedExpenses);
@@ -138,6 +207,10 @@ useEffect(() => {
   const bumpGoal = (id, amount) => setGoals((prev) => prev.map((g) => g.id === id ? { ...g, guardado: Math.min(g.alvo, g.guardado + amount) } : g));
 const editGoal = (id, changes) => setGoals((prev) => prev.map((g) => g.id === id ? { ...g, ...changes } : g));
 const removeGoal = (id) => setGoals((prev) => prev.filter((g) => g.id !== id));
+const sair = async () => {
+  setMenuAberto(false);
+  await supabase.auth.signOut();
+};
   if (loadingSession) {
   return (
     <div style={{ minHeight: "100vh", background: dark ? PALETTE.bgDark : PALETTE.bgLight, display: "flex", alignItems: "center", justifyContent: "center", color: dark ? PALETTE.textDark : PALETTE.textLight }}>
@@ -180,9 +253,41 @@ if (!session) {
           </div>
           <span className="display" style={{ fontSize: 18, fontWeight: 700 }}>Agente <span style={{ color: PALETTE.purple }}>Financeiro</span></span>
         </div>
-        <button onClick={() => setDark((d) => !d)} style={{ background: c.surface2, border: "none", borderRadius: 999, padding: 8, cursor: "pointer", color: c.text }}>
-          {dark ? <Sun size={16} /> : <Moon size={16} />}
-        </button>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, position: "relative" }}>
+          <button onClick={() => setDark((d) => !d)} style={{ background: c.surface2, border: "none", borderRadius: 999, padding: 8, cursor: "pointer", color: c.text }}>
+            {dark ? <Sun size={16} /> : <Moon size={16} />}
+          </button>
+          <button onClick={() => setMenuAberto((m) => !m)} style={{ background: c.surface2, border: "none", borderRadius: 999, padding: 8, cursor: "pointer", color: c.text }}>
+            <Settings size={16} />
+          </button>
+
+          {menuAberto && (
+            <>
+              <div onClick={() => setMenuAberto(false)} style={{ position: "fixed", inset: 0, zIndex: 19 }} />
+              <div style={{ position: "absolute", top: 44, right: 0, background: c.surface, border: `1px solid ${c.surface2}`, borderRadius: 14, minWidth: 200, boxShadow: "0 12px 32px rgba(0,0,0,0.35)", zIndex: 20, overflow: "hidden" }}>
+                <button
+                  onClick={() => { setTab("termos"); setMenuAberto(false); }}
+                  style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", background: "transparent", border: "none", cursor: "pointer", color: c.text, fontSize: 13, textAlign: "left" }}
+                >
+                  <FileText size={16} /> Termos de serviço
+                </button>
+                <button
+                  onClick={() => { setTab("privacidade"); setMenuAberto(false); }}
+                  style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", background: "transparent", border: "none", cursor: "pointer", color: c.text, fontSize: 13, textAlign: "left" }}
+                >
+                  <ShieldAlert size={16} /> Política de privacidade
+                </button>
+                <div style={{ height: 1, background: c.surface2 }} />
+                <button
+                  onClick={sair}
+                  style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", background: "transparent", border: "none", cursor: "pointer", color: PALETTE.red, fontSize: 13, fontWeight: 600, textAlign: "left" }}
+                >
+                  <LogOut size={16} /> Sair
+                </button>
+              </div>
+            </>
+          )}
+        </div>
       </div>
 
       <div style={{ maxWidth: 480, margin: "0 auto", padding: "20px 16px 100px" }}>
@@ -202,6 +307,8 @@ if (!session) {
             : <Paywall c={c} onIrParaAssinatura={() => setTab("assinatura")} />
         )}
         {tab === "assinatura" && <Assinatura c={c} dark={dark} plano={plano} setPlano={setPlano} session={session} />}
+        {tab === "termos" && <PaginaLegal c={c} titulo="Termos de serviço" onVoltar={() => setTab("dashboard")} texto={TERMOS_TEXTO} />}
+        {tab === "privacidade" && <PaginaLegal c={c} titulo="Política de privacidade" onVoltar={() => setTab("dashboard")} texto={PRIVACIDADE_TEXTO} />}
       </div>
 
       {/* Bottom nav */}
@@ -214,6 +321,25 @@ if (!session) {
         <NavBtn icon={MessageCircle} label="Assistente" active={tab === "assistente"} onClick={() => setTab("assistente")} c={c} />
         <NavBtn icon={Crown} label="Assinatura" active={tab === "assinatura"} onClick={() => setTab("assinatura")} c={c} />
       </div>
+    </div>
+  );
+}
+
+function PaginaLegal({ c, titulo, texto, onVoltar }) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+      <button
+        onClick={onVoltar}
+        style={{ alignSelf: "flex-start", background: "transparent", border: "none", color: c.muted, fontSize: 13, cursor: "pointer", padding: 0 }}
+      >
+        ← Voltar
+      </button>
+      <div className="display" style={{ fontWeight: 700, fontSize: 18 }}>{titulo}</div>
+      <Card c={c}>
+        <div style={{ fontSize: 13, lineHeight: 1.7, color: c.text, whiteSpace: "pre-wrap" }}>
+          {texto}
+        </div>
+      </Card>
     </div>
   );
 }
@@ -829,4 +955,4 @@ function Assinatura({ c, dark, plano, setPlano, session }) {
       </div>
     </div>
   );
-      }
+}
