@@ -119,7 +119,13 @@ Dúvidas sobre esta política podem ser enviadas para suporteagentefinanceiro@gm
 // Troque pelo endereço real e pela integração de login quando existirem.
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "https://SEU-BACKEND.exemplo.com";
 const USER_ID = "00000000-0000-0000-0000-000000000001";
-
+async function ensureUser(userId) {
+  fetch(`${BACKEND_URL}/api/ensure-user`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ userId }),
+  }).catch((err) => console.error("Erro ao garantir usuário:", err));
+}
 export default function AgenteFinanceiro() {
   const [session, setSession] = useState(null);
 const [loadingSession, setLoadingSession] = useState(true);
@@ -127,10 +133,12 @@ const [loadingSession, setLoadingSession] = useState(true);
 useEffect(() => {
   supabase.auth.getSession().then(({ data: { session } }) => {
     setSession(session);
+    if (session) ensureUser(session.user.id);
     setLoadingSession(false);
   });
   const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
     setSession(session);
+    if (session) ensureUser(session.user.id);
   });
   return () => subscription.unsubscribe();
 }, []);
