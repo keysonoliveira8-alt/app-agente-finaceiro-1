@@ -141,7 +141,33 @@ useEffect(() => {
   const [incomes, setIncomes] = useState([]);
   const [expenses, setExpenses] = useState([]);
   const [goals, setGoals] = useState([]);
-
+useEffect(() => {
+  if (!session) return;
+  const carregarDados = async () => {
+    const { data: entradasData } = await supabase
+      .from("entradas").select("*").eq("user_id", session.user.id).order("data", { ascending: false });
+    if (entradasData) {
+      setIncomes(entradasData.map((e) => ({
+        id: e.id, valor: e.valor, data: e.data, categoria: e.categoria, obs: e.observacao,
+      })));
+    }
+    const { data: saidasData } = await supabase
+      .from("saidas").select("*").eq("user_id", session.user.id).order("data", { ascending: false });
+    if (saidasData) {
+      setExpenses(saidasData.map((s) => ({
+        id: s.id, valor: s.valor, data: s.data, categoria: s.categoria, forma: s.forma, obs: s.observacao,
+      })));
+    }
+    const { data: metasData } = await supabase
+      .from("metas").select("*").eq("user_id", session.user.id);
+    if (metasData) {
+      setGoals(metasData.map((g) => ({
+        id: g.id, nome: g.titulo, tipo: g.tipo, alvo: g.valor_meta, guardado: g.valor_atual,
+      })));
+    }
+  };
+  carregarDados();
+}, [session]);
   const c = dark
     ? { bg: PALETTE.bgDark, surface: PALETTE.surfaceDark, surface2: PALETTE.surfaceDark2, text: PALETTE.textDark, muted: PALETTE.textMutedDark }
     : { bg: PALETTE.bgLight, surface: PALETTE.surfaceLight, surface2: PALETTE.surfaceLight2, text: PALETTE.textLight, muted: PALETTE.textMutedLight };
@@ -182,14 +208,62 @@ useEffect(() => {
     ? `Você gastou ${money(topCategory.value)} com ${topCategory.name}, ${Math.round((topCategory.value / (totalExpense || 1)) * 100)}% do total de saídas do mês.`
     : "Cadastre gastos para receber dicas personalizadas.";
 
-  const addIncome = (item) => setIncomes((prev) => [{ ...item, id: Date.now() }, ...prev]);
-  const addExpense = (item) => setExpenses((prev) => [{ ...item, id: Date.now() }, ...prev]);
-  const addGoal = (item) => setGoals((prev) => [...prev, { ...item, id: Date.now() }]);
-  const removeIncome = (id) => setIncomes((prev) => prev.filter((i) => i.id !== id));
-  const removeExpense = (id) => setExpenses((prev) => prev.filter((i) => i.id !== id));
-  const bumpGoal = (id, amount) => setGoals((prev) => prev.map((g) => g.id === id ? { ...g, guardado: Math.min(g.alvo, g.guardado + amount) } : g));
-const editGoal = (id, changes) => setGoals((prev) => prev.map((g) => g.id === id ? { ...g, ...changes } : g));
-const removeGoal = (id) => setGoals((prev) => prev.filter((g) => g.id !== id));
+  const addIncome = async (item) => {
+  const { data, error } = await supabase.from("entradas").insert({
+    user_id: session.user.id, valor: item.valor, data: item.data,
+    categoria: item.categoria, observacao: item.obs || null, origem: "app",
+  }).select().single();
+  if (error) { console.error(error); return; }
+  setIncomes((prev) => [{ id: data.id, valor: data.valor, data: data.data, categoria: data.categoria, obs: data.observacao }, ...prev]);
+};
+
+const addExpense = async (item) => {
+  const { data, error } = await supabase.from("saidas").insert({
+    user_id: session.user.id, valor: item.valor, data: item.data,
+    categoria: item.categoria, forma: item.forma || null, observacao: item.obs || null, origem: "app",
+  }).select().single();
+  if (error) { console.error(error); return; }
+  setExpenses((prev) => [{ id: data.id, valor: data.valor, data: data.data, categoria: data.categoria, forma: data.forma, obs: data.observacao }, ...prev]);
+};
+
+const addGoal = async (item) => {
+  const { data, error } = await supabase.from("metas").insert({
+    user_id: session.user.id, titulo: item.nome, tipo: item.tipo,
+    valor_meta: item.alvo, valor_atual: item.guardado || 0,
+  }).select().single();
+  if (error) { console.error(error); return; }
+  setGoals((prev) => [...prev, { id: data.id, nome: data.titulo, tipo: data.tipo, alvo: data.valor_meta, guardado: data.valor_atual }]);
+};
+
+const removeIncome = async (id) => {
+  setIncomes((prev) => prev.filter((i) => i.id !== id));
+  await supabase.from("entradas").delete().eq("id", id);
+};
+
+const removeExpense = async (id) => {
+  setExpenses((prev) => prev.filter((i) => i.id !== id));
+  await supabase.from("saidas").delete().eq("id", id);
+};
+
+const bumpGoal = async (id, amount) => {
+  const goal = goals.find((g) => g.id === id);
+  if (!goal) return;
+  const novoGuardado = Math.min(goal.alvo, goal.guardado + amount);
+  setGoals((prev) => prev.map((g) => (g.id === id ? { ...g, guardado: novoGuardado } : g)));
+  await supabase.from("metas").update({ valor_atual: novoGuardado }).eq("id", id);
+};
+
+const editGoal = async (id, changes) => {
+  setGoals((prev) => prev.map((g) => (g.id === id ? { ...g, ...changes } : g)));
+  await supabase.from("metas").update({
+    titulo: changes.nome, valor_meta: changes.alvo, valor_atual: changes.guardado,
+  }).eq("id", id);
+};
+
+const removeGoal = async (id) => {
+  setGoals((prev) => prev.filter((g) => g.id !== id));
+  await supabase.from("metas").delete().eq("id", id);
+};
 const sair = async () => {
   setMenuAberto(false);
   await supabase.auth.signOut();
