@@ -381,7 +381,7 @@ if (!session) {
         )}
         {tab === "assistente" && (
           plano === "premium"
-            ? <AssistenteIA c={c} dark={dark} balance={balance} addIncome={addIncome} addExpense={addExpense} />
+            ? <AssistenteIA c={c} dark={dark} balance={balance} addIncome={addIncome} addExpense={addExpense} session={session} />
             : <Paywall c={c} onIrParaAssinatura={() => setTab("assinatura")} mensagem="O Assistente com IA é exclusivo do plano Premium. Assine para registrar gastos por texto ou voz." />
         )}
         {tab === "assinatura" && <Assinatura c={c} dark={dark} plano={plano} setPlano={setPlano} session={session} />}
@@ -809,7 +809,7 @@ function Relatorios({ c, byCategory, pieColors, monthCompare, totalIncome, total
 
 // ---------- Assistente IA (mesmo motor que rodaria no WhatsApp) ----------
 
-function AssistenteIA({ c, dark, balance, addIncome, addExpense }) {
+function AssistenteIA({ c, dark, balance, addIncome, addExpense , session}) {
   const [messages, setMessages] = useState([
     { from: "bot", text: "Oi! Sou o Agente Financeiro. Me conta seus gastos e ganhos como se estivesse me mandando um WhatsApp — eu registro tudo pra você. Ex: \"gastei 35 no mercado\" ou \"recebi 500 de pix\"." },
   ]);
