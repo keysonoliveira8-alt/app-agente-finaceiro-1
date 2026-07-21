@@ -283,6 +283,30 @@ const removeGoal = async (id) => {
   setGoals((prev) => prev.filter((g) => g.id !== id));
   await supabase.from("metas").delete().eq("id", id);
 };
+  const addGastoFixo = async (item) => {
+  const { data, error } = await supabase.from("gastos_fixos").insert({
+    user_id: session.user.id, nome: item.nome, valor: item.valor, dia_vencimento: item.dia_vencimento,
+  }).select().single();
+  if (error) { console.error(error); return; }
+  setGastosFixos((prev) => [...prev, data].sort((a, b) => a.dia_vencimento - b.dia_vencimento));
+};
+
+const marcarPagoGastoFixo = async (id, pago) => {
+  setGastosFixos((prev) => prev.map((g) => (g.id === id ? { ...g, pago_este_mes: pago } : g)));
+  await supabase.from("gastos_fixos").update({ pago_este_mes: pago }).eq("id", id);
+};
+
+const editGastoFixo = async (id, changes) => {
+  setGastosFixos((prev) => prev.map((g) => (g.id === id ? { ...g, ...changes } : g)));
+  await supabase.from("gastos_fixos").update({
+    nome: changes.nome, valor: changes.valor, dia_vencimento: changes.dia_vencimento,
+  }).eq("id", id);
+};
+
+const removeGastoFixo = async (id) => {
+  setGastosFixos((prev) => prev.filter((g) => g.id !== id));
+  await supabase.from("gastos_fixos").delete().eq("id", id);
+};
 const sair = async () => {
   setMenuAberto(false);
   await supabase.auth.signOut();
