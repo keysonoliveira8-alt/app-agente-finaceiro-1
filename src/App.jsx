@@ -149,6 +149,7 @@ useEffect(() => {
   const [incomes, setIncomes] = useState([]);
   const [expenses, setExpenses] = useState([]);
   const [goals, setGoals] = useState([]);
+  const [gastosFixos, setGastosFixos] = useState([]);
 useEffect(() => {
   if (!session) return;
 const carregarDados = async () => {
@@ -174,10 +175,15 @@ const carregarDados = async () => {
     })));
   }
   const { data: usuarioData } = await supabase
-    .from("usuarios").select("plano").eq("id", session.user.id).single();
-  if (usuarioData) {
-    setPlano(usuarioData.plano);
-  }
+      .from("usuarios").select("plano").eq("id", session.user.id).single();
+    if (usuarioData) {
+      setPlano(usuarioData.plano);
+    }
+    const { data: gastosFixosData } = await supabase
+      .from("gastos_fixos").select("*").eq("user_id", session.user.id).order("dia_vencimento");
+    if (gastosFixosData) {
+      setGastosFixos(gastosFixosData);
+    }
 };
 carregarDados();
 }, [session]);
