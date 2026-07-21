@@ -151,30 +151,35 @@ useEffect(() => {
   const [goals, setGoals] = useState([]);
 useEffect(() => {
   if (!session) return;
-  const carregarDados = async () => {
-    const { data: entradasData } = await supabase
-      .from("entradas").select("*").eq("user_id", session.user.id).order("data", { ascending: false });
-    if (entradasData) {
-      setIncomes(entradasData.map((e) => ({
-        id: e.id, valor: e.valor, data: e.data, categoria: e.categoria, obs: e.observacao,
-      })));
-    }
-    const { data: saidasData } = await supabase
-      .from("saidas").select("*").eq("user_id", session.user.id).order("data", { ascending: false });
-    if (saidasData) {
-      setExpenses(saidasData.map((s) => ({
-        id: s.id, valor: s.valor, data: s.data, categoria: s.categoria, forma: s.forma, obs: s.observacao,
-      })));
-    }
-    const { data: metasData } = await supabase
-      .from("metas").select("*").eq("user_id", session.user.id);
-    if (metasData) {
-      setGoals(metasData.map((g) => ({
-        id: g.id, nome: g.titulo, tipo: g.tipo, alvo: g.valor_meta, guardado: g.valor_atual,
-      })));
-    }
-  };
-  carregarDados();
+const carregarDados = async () => {
+  const { data: entradasData } = await supabase
+    .from("entradas").select("*").eq("user_id", session.user.id).order("data", { ascending: false });
+  if (entradasData) {
+    setIncomes(entradasData.map((e) => ({
+      id: e.id, valor: e.valor, data: e.data, categoria: e.categoria, obs: e.observacao
+    })));
+  }
+  const { data: saidasData } = await supabase
+    .from("saidas").select("*").eq("user_id", session.user.id).order("data", { ascending: false });
+  if (saidasData) {
+    setExpenses(saidasData.map((s) => ({
+      id: s.id, valor: s.valor, data: s.data, categoria: s.categoria, forma: s.forma, obs: s.observacao
+    })));
+  }
+  const { data: metasData } = await supabase
+    .from("metas").select("*").eq("user_id", session.user.id);
+  if (metasData) {
+    setGoals(metasData.map((g) => ({
+      id: g.id, nome: g.titulo, tipo: g.tipo, alvo: g.valor_meta, guardado: g.valor_atual
+    })));
+  }
+  const { data: usuarioData } = await supabase
+    .from("usuarios").select("plano").eq("id", session.user.id).single();
+  if (usuarioData) {
+    setPlano(usuarioData.plano);
+  }
+};
+carregarDados();
 }, [session]);
   const c = dark
     ? { bg: PALETTE.bgDark, surface: PALETTE.surfaceDark, surface2: PALETTE.surfaceDark2, text: PALETTE.textDark, muted: PALETTE.textMutedDark }
