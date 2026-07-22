@@ -295,8 +295,9 @@ const addGastoFixo = async (item) => {
 };
 
 const marcarPagoGastoFixo = async (id, pago) => {
-  setGastosFixos((prev) => prev.map((g) => (g.id === id ? { ...g, pago_este_mes: pago } : g)));
-  await supabase.from("gastos_fixos").update({ pago_este_mes: pago }).eq("id", id);
+  const pagoEm = pago ? new Date().toISOString().slice(0, 10) : null;
+  setGastosFixos((prev) => prev.map((g) => (g.id === id ? { ...g, pago_em: pagoEm } : g)));
+  await supabase.from("gastos_fixos").update({ pago_em: pagoEm }).eq("id", id);
 };
 
 const editGastoFixo = async (id, changes) => {
@@ -406,6 +407,7 @@ if (!session) {
             c={c} expenses={expenses} onAdd={addExpense} onRemove={removeExpense} dark={dark}
             gastosFixos={gastosFixos} onAddGastoFixo={addGastoFixo} onTogglePagoGastoFixo={marcarPagoGastoFixo}
             onEditGastoFixo={editGastoFixo} onRemoveGastoFixo={removeGastoFixo}
+            plano={plano} onIrParaAssinatura={() => setTab("assinatura")}
           />
         )}
         {tab === "metas" && (
@@ -475,8 +477,15 @@ function Card({ c, children, style }) {
 }
 
 // ---------- Gastos Fixos: helpers ----------
+function pagoEsteMes(g) {
+  if (!g.pago_em) return false;
+  const pagoDate = new Date(`${g.pago_em}T00:00:00`);
+  const hoje = new Date();
+  return pagoDate.getMonth() === hoje.getMonth() && pagoDate.getFullYear() === hoje.getFullYear();
+}
+
 function statusGastoFixo(g) {
-  if (g.pago_este_mes) return "green";
+  if (pagoEsteMes(g)) return "green";
   const hoje = new Date().getDate();
   const diff = g.dia_vencimento - hoje;
   if (diff < 0) return "red";
@@ -662,7 +671,7 @@ function ListaEntradas({ c, incomes, onAdd, onRemove, dark }) {
 }
 
 // ---------- Saídas ----------
-function ListaSaidas({ c, expenses, onAdd, onRemove, dark, gastosFixos, onAddGastoFixo, onTogglePagoGastoFixo, onEditGastoFixo, onRemoveGastoFixo }) {
+function ListaSaidas({ c, expenses, onAdd, onRemove, dark, gastosFixos, onAddGastoFixo, onTogglePagoGastoFixo, onEditGastoFixo, onRemoveGastoFixo, plano, onIrParaAssinatura }) {
   const [form, setForm] = useState({ valor: "", data: "", categoria: EXPENSE_CATS[0], forma: PAYMENT_METHODS[0], obs: "" });
   const submit = () => {
     if (!form.valor || !form.data) return;
@@ -682,11 +691,15 @@ function ListaSaidas({ c, expenses, onAdd, onRemove, dark, gastosFixos, onAddGas
         <RowList items={expenses} c={c} onRemove={onRemove} sign="-" color="#F87171" iconMap={CATEGORY_ICONS} />
       </Card>
 
-      <GastosFixos
-        c={c} dark={dark} gastosFixos={gastosFixos}
-        onAdd={onAddGastoFixo} onTogglePago={onTogglePagoGastoFixo}
-        onEdit={onEditGastoFixo} onRemove={onRemoveGastoFixo}
-      />
+      {plano === "premium" ? (
+        <GastosFixos
+          c={c} dark={dark} gastosFixos={gastosFixos}
+          onAdd={onAddGastoFixo} onTogglePago={onTogglePagoGastoFixo}
+          onEdit={onEditGastoFixo} onRemove={onRemoveGastoFixo}
+        />
+      ) : (
+        <Paywall c={c} onIrParaAssinatura={onIrParaAssinatura} mensagem="Os Gastos Fixos são exclusivos do plano Premium. Assine para acompanhar contas recorrentes com alertas de vencimento." />
+      )}
     </div>
   );
 }
@@ -770,17 +783,17 @@ function GastosFixos({ c, dark, gastosFixos, onAdd, onTogglePago, onEdit, onRemo
                   <div style={{ fontSize: 14.5, fontWeight: 600, marginBottom: 2 }}>{g.nome}</div>
                   <div style={{ fontSize: 11.5, color: c.muted, marginBottom: 6 }}>{labelVencimento(g)}</div>
                   <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 9px", borderRadius: 999, background: cores.bg, color: cores.cor }}>
-                    {g.pago_este_mes ? "✓ Pago este mês" : status === "red" ? "⚠ Atrasado" : status === "orange" ? "● Vence em breve" : "Em dia"}
+                    {pagoEsteMes(g) ? "✓ Pago este mês" : status === "red" ? "⚠ Atrasado" : status === "orange" ? "● Vence em breve" : "Em dia"}
                   </span>
                 </div>
                 <div className="num" style={{ fontSize: 15, textAlign: "right" }}>{money(g.valor)}</div>
                 <button
-                  onClick={() => onTogglePago(g.id, !g.pago_este_mes)}
-                  title={g.pago_este_mes ? "Desmarcar como pago" : "Marcar como pago"}
+                  onClick={() => onTogglePago(g.id, !pagoEsteMes(g))}
+                  title={pagoEsteMes(g) ? "Desmarcar como pago" : "Marcar como pago"}
                   style={{
                     width: 34, height: 34, borderRadius: 999, border: "none", cursor: "pointer",
-                    background: g.pago_este_mes ? "rgba(52,211,153,0.18)" : c.surface2,
-                    color: g.pago_este_mes ? PALETTE.green : c.muted,
+                    background: pagoEsteMes(g) ? "rgba(52,211,153,0.18)" : c.surface2,
+                    color: pagoEsteMes(g) ? PALETTE.green : c.muted,
                     display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
                   }}
                 >
