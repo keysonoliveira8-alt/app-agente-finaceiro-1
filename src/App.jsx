@@ -648,11 +648,11 @@ function Dashboard({ c, balance, totalIncome, totalExpense, savings, byCategory,
 
 // ---------- Entradas ----------
 function ListaEntradas({ c, incomes, onAdd, onRemove, dark }) {
-  const [form, setForm] = useState({ valor: "", data: "", categoria: INCOME_CATS[0], obs: "" });
+  const [form, setForm] = useState({ valor: "", data: new Date().toISOString().slice(0, 10), categoria: INCOME_CATS[0], obs: "" });
   const submit = () => {
     if (!form.valor || !form.data) return;
     onAdd({ ...form, valor: parseFloat(form.valor) });
-    setForm({ valor: "", data: "", categoria: INCOME_CATS[0], obs: "" });
+    setForm({ valor: "", data: new Date().toISOString().slice(0, 10), categoria: INCOME_CATS[0], obs: "" });
   };
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
@@ -672,11 +672,11 @@ function ListaEntradas({ c, incomes, onAdd, onRemove, dark }) {
 
 // ---------- Saídas ----------
 function ListaSaidas({ c, expenses, onAdd, onRemove, dark, gastosFixos, onAddGastoFixo, onTogglePagoGastoFixo, onEditGastoFixo, onRemoveGastoFixo, plano, onIrParaAssinatura }) {
-  const [form, setForm] = useState({ valor: "", data: "", categoria: EXPENSE_CATS[0], forma: PAYMENT_METHODS[0], obs: "" });
+  const [form, setForm] = useState({ valor: "", data: new Date().toISOString().slice(0, 10), categoria: EXPENSE_CATS[0], forma: PAYMENT_METHODS[0], obs: "" });
   const submit = () => {
     if (!form.valor || !form.data) return;
     onAdd({ ...form, valor: parseFloat(form.valor) });
-    setForm({ valor: "", data: "", categoria: EXPENSE_CATS[0], forma: PAYMENT_METHODS[0], obs: "" });
+    setForm({ valor: "", data: new Date().toISOString().slice(0, 10), categoria: EXPENSE_CATS[0], forma: PAYMENT_METHODS[0], obs: "" });
   };
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
@@ -833,9 +833,11 @@ function GastosFixos({ c, dark, gastosFixos, onAdd, onTogglePago, onEdit, onRemo
 
 function Form({ c, dark, form, setForm, categories, showPayment, onSubmit, accent }) {
   const inputStyle = { width: "100%", padding: "10px 12px", borderRadius: 12, border: `1px solid ${c.surface2}`, background: c.surface2, color: c.text, fontSize: 13, outline: "none" };
+  const labelStyle = { fontSize: 11.5, color: c.muted, marginBottom: -4, fontWeight: 600 };
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
       <input style={inputStyle} type="number" placeholder="Valor (R$)" value={form.valor} onChange={(e) => setForm({ ...form, valor: e.target.value })} />
+      <div style={labelStyle}>Data</div>
       <input style={inputStyle} type="date" value={form.data} onChange={(e) => setForm({ ...form, data: e.target.value })} />
       <select style={inputStyle} value={form.categoria} onChange={(e) => setForm({ ...form, categoria: e.target.value })}>
         {categories.map((cat) => <option key={cat} value={cat}>{cat}</option>)}
