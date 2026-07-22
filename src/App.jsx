@@ -10,6 +10,7 @@ import {
   PlusCircle, MinusCircle, BarChart3, Moon, Sun, Sparkles, Trash2,
   TrendingUp, TrendingDown, Car, Plane, ShieldCheck, Smartphone,Pencil,
   MessageCircle, Send, Bot, Crown, Check, Lock, Settings, LogOut, FileText, ShieldAlert,
+  Repeat, AlertTriangle,
 } from "lucide-react";
 
 // ---------- Tema ----------
@@ -25,6 +26,7 @@ const PALETTE = {
   purpleSoft: "#C4B5FD",
   green: "#34D399",
   greenDeep: "#059669",
+  orange: "#FBBF24",
   red: "#F87171",
   textDark: "#F4F1FC",
   textMutedDark: "#9C93B8",
@@ -175,15 +177,15 @@ const carregarDados = async () => {
     })));
   }
   const { data: usuarioData } = await supabase
-      .from("usuarios").select("plano").eq("id", session.user.id).single();
-    if (usuarioData) {
-      setPlano(usuarioData.plano);
-    }
-    const { data: gastosFixosData } = await supabase
-      .from("gastos_fixos").select("*").eq("user_id", session.user.id).order("dia_vencimento");
-    if (gastosFixosData) {
-      setGastosFixos(gastosFixosData);
-    }
+    .from("usuarios").select("plano").eq("id", session.user.id).single();
+  if (usuarioData) {
+    setPlano(usuarioData.plano);
+  }
+  const { data: gastosFixosData } = await supabase
+    .from("gastos_fixos").select("*").eq("user_id", session.user.id).order("dia_vencimento");
+  if (gastosFixosData) {
+    setGastosFixos(gastosFixosData);
+  }
 };
 carregarDados();
 }, [session]);
@@ -283,7 +285,8 @@ const removeGoal = async (id) => {
   setGoals((prev) => prev.filter((g) => g.id !== id));
   await supabase.from("metas").delete().eq("id", id);
 };
-  const addGastoFixo = async (item) => {
+
+const addGastoFixo = async (item) => {
   const { data, error } = await supabase.from("gastos_fixos").insert({
     user_id: session.user.id, nome: item.nome, valor: item.valor, dia_vencimento: item.dia_vencimento,
   }).select().single();
@@ -395,10 +398,16 @@ if (!session) {
           <Dashboard c={c} balance={balance} totalIncome={totalIncome} totalExpense={totalExpense}
             savings={savings} byCategory={byCategory} pieColors={pieColors} dica={dica}
             weeklyFlow={weeklyFlow} monthCompare={monthCompare} goals={goals} dark={dark}
-            incomes={incomes} expenses={expenses} />
+            incomes={incomes} expenses={expenses} gastosFixos={gastosFixos} />
         )}
         {tab === "entradas" && <ListaEntradas c={c} incomes={incomes} onAdd={addIncome} onRemove={removeIncome} dark={dark} />}
-        {tab === "saidas" && <ListaSaidas c={c} expenses={expenses} onAdd={addExpense} onRemove={removeExpense} dark={dark} />}
+        {tab === "saidas" && (
+          <ListaSaidas
+            c={c} expenses={expenses} onAdd={addExpense} onRemove={removeExpense} dark={dark}
+            gastosFixos={gastosFixos} onAddGastoFixo={addGastoFixo} onTogglePagoGastoFixo={marcarPagoGastoFixo}
+            onEditGastoFixo={editGastoFixo} onRemoveGastoFixo={removeGastoFixo}
+          />
+        )}
         {tab === "metas" && (
           plano === "premium"
             ? <Metas c={c} goals={goals} onAdd={addGoal} onBump={bumpGoal} onEdit={editGoal} onRemove={removeGoal} dark={dark} plano={plano} onIrParaAssinatura={() => setTab("assinatura")} />
@@ -465,12 +474,33 @@ function Card({ c, children, style }) {
   return <div style={{ background: c.surface, borderRadius: 20, padding: 18, ...style }}>{children}</div>;
 }
 
+// ---------- Gastos Fixos: helpers ----------
+function statusGastoFixo(g) {
+  if (g.pago_este_mes) return "green";
+  const hoje = new Date().getDate();
+  const diff = g.dia_vencimento - hoje;
+  if (diff < 0) return "red";
+  if (diff <= 5) return "orange";
+  return "green";
+}
+
+function labelVencimento(g) {
+  const hoje = new Date().getDate();
+  const diff = g.dia_vencimento - hoje;
+  if (diff === 0) return `Vence hoje (dia ${g.dia_vencimento})`;
+  if (diff > 0) return `Vence dia ${g.dia_vencimento} · em ${diff} dia${diff > 1 ? "s" : ""}`;
+  return `Venceu dia ${g.dia_vencimento} · há ${Math.abs(diff)} dia${Math.abs(diff) > 1 ? "s" : ""}`;
+}
+
 // ---------- Dashboard ----------
-function Dashboard({ c, balance, totalIncome, totalExpense, savings, byCategory, pieColors, dica, weeklyFlow, monthCompare, goals, dark, incomes, expenses }) {
+function Dashboard({ c, balance, totalIncome, totalExpense, savings, byCategory, pieColors, dica, weeklyFlow, monthCompare, goals, dark, incomes, expenses, gastosFixos }) {
   const movs = [
     ...incomes.map((i) => ({ ...i, tipo: "entrada" })),
     ...expenses.map((e) => ({ ...e, tipo: "saida" })),
   ].sort((a, b) => b.data.localeCompare(a.data)).slice(0, 5);
+
+  const contasVencendo = (gastosFixos || []).filter((g) => statusGastoFixo(g) === "orange");
+  const contasAtrasadas = (gastosFixos || []).filter((g) => statusGastoFixo(g) === "red");
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
@@ -497,6 +527,28 @@ function Dashboard({ c, balance, totalIncome, totalExpense, savings, byCategory,
           </div>
         </div>
       </div>
+
+      {/* Aviso de contas fixas vencendo/atrasadas */}
+      {(contasVencendo.length > 0 || contasAtrasadas.length > 0) && (
+        <Card c={c} style={{ border: `1px solid ${contasAtrasadas.length > 0 ? PALETTE.red : PALETTE.orange}55` }}>
+          <div style={{ display: "flex", gap: 10 }}>
+            <AlertTriangle size={18} color={contasAtrasadas.length > 0 ? PALETTE.red : PALETTE.orange} style={{ flexShrink: 0, marginTop: 2 }} />
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 13.5, fontWeight: 600, marginBottom: 6 }}>
+                {contasAtrasadas.length > 0 ? "Contas atrasadas" : "Contas vencendo em breve"}
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                {[...contasAtrasadas, ...contasVencendo].slice(0, 4).map((g) => (
+                  <div key={g.id} style={{ display: "flex", justifyContent: "space-between", fontSize: 12.5, color: c.muted }}>
+                    <span>{g.nome}</span>
+                    <span className="num" style={{ color: statusGastoFixo(g) === "red" ? PALETTE.red : PALETTE.orange }}>{money(g.valor)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </Card>
+      )}
 
       {/* Dica IA */}
       <Card c={c} style={{ border: `1px solid ${PALETTE.purple}44` }}>
@@ -610,7 +662,7 @@ function ListaEntradas({ c, incomes, onAdd, onRemove, dark }) {
 }
 
 // ---------- Saídas ----------
-function ListaSaidas({ c, expenses, onAdd, onRemove, dark }) {
+function ListaSaidas({ c, expenses, onAdd, onRemove, dark, gastosFixos, onAddGastoFixo, onTogglePagoGastoFixo, onEditGastoFixo, onRemoveGastoFixo }) {
   const [form, setForm] = useState({ valor: "", data: "", categoria: EXPENSE_CATS[0], forma: PAYMENT_METHODS[0], obs: "" });
   const submit = () => {
     if (!form.valor || !form.data) return;
@@ -629,6 +681,139 @@ function ListaSaidas({ c, expenses, onAdd, onRemove, dark }) {
         <div className="display" style={{ fontWeight: 600, marginBottom: 10, fontSize: 14 }}>Saídas registradas</div>
         <RowList items={expenses} c={c} onRemove={onRemove} sign="-" color="#F87171" iconMap={CATEGORY_ICONS} />
       </Card>
+
+      <GastosFixos
+        c={c} dark={dark} gastosFixos={gastosFixos}
+        onAdd={onAddGastoFixo} onTogglePago={onTogglePagoGastoFixo}
+        onEdit={onEditGastoFixo} onRemove={onRemoveGastoFixo}
+      />
+    </div>
+  );
+}
+
+// ---------- Gastos Fixos ----------
+function GastosFixos({ c, dark, gastosFixos, onAdd, onTogglePago, onEdit, onRemove }) {
+  const [form, setForm] = useState({ nome: "", valor: "", dia_vencimento: "" });
+  const [editingId, setEditingId] = useState(null);
+  const [editForm, setEditForm] = useState({ nome: "", valor: "", dia_vencimento: "" });
+  const inputStyle = { width: "100%", padding: "10px 12px", borderRadius: 12, border: `1px solid ${c.surface2}`, background: c.surface2, color: c.text, fontSize: 14 };
+
+  const statusStyle = {
+    green: { cor: PALETTE.green, bg: "rgba(52,211,153,0.15)" },
+    orange: { cor: PALETTE.orange, bg: "rgba(251,191,36,0.15)" },
+    red: { cor: PALETTE.red, bg: "rgba(248,113,113,0.15)" },
+  };
+
+  const submit = () => {
+    if (!form.nome || !form.valor || !form.dia_vencimento) return;
+    const dia = Math.min(31, Math.max(1, parseInt(form.dia_vencimento, 10) || 1));
+    onAdd({ nome: form.nome, valor: parseFloat(form.valor), dia_vencimento: dia });
+    setForm({ nome: "", valor: "", dia_vencimento: "" });
+  };
+
+  const startEdit = (g) => {
+    setEditingId(g.id);
+    setEditForm({ nome: g.nome, valor: g.valor, dia_vencimento: g.dia_vencimento });
+  };
+
+  const saveEdit = (id) => {
+    const dia = Math.min(31, Math.max(1, parseInt(editForm.dia_vencimento, 10) || 1));
+    onEdit(id, { nome: editForm.nome, valor: parseFloat(editForm.valor), dia_vencimento: dia });
+    setEditingId(null);
+  };
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <div style={{ width: 30, height: 30, borderRadius: 999, background: `${PALETTE.orange}22`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <Repeat size={16} color={PALETTE.orange} />
+        </div>
+        <div>
+          <div className="display" style={{ fontSize: 14, fontWeight: 600 }}>Gastos Fixos</div>
+          <div style={{ fontSize: 11, color: c.muted }}>Contas recorrentes do mês</div>
+        </div>
+      </div>
+
+      {gastosFixos.length > 0 && (
+        <div style={{ display: "flex", gap: 14, background: c.surface, borderRadius: 14, padding: "12px 14px", fontSize: 11, color: c.muted, flexWrap: "wrap" }}>
+          <span style={{ display: "flex", alignItems: "center", gap: 6 }}><span style={{ width: 8, height: 8, borderRadius: 99, background: PALETTE.green }} /> Pago / em dia</span>
+          <span style={{ display: "flex", alignItems: "center", gap: 6 }}><span style={{ width: 8, height: 8, borderRadius: 99, background: PALETTE.orange }} /> Vence em breve</span>
+          <span style={{ display: "flex", alignItems: "center", gap: 6 }}><span style={{ width: 8, height: 8, borderRadius: 99, background: PALETTE.red }} /> Atrasado</span>
+        </div>
+      )}
+
+      {gastosFixos.length === 0 && (
+        <Card c={c}>
+          <div style={{ fontSize: 13, color: c.muted, textAlign: "center" }}>Nenhum gasto fixo cadastrado ainda.</div>
+        </Card>
+      )}
+
+      {gastosFixos.map((g) => {
+        const status = statusGastoFixo(g);
+        const cores = statusStyle[status];
+        const isEditing = editingId === g.id;
+        return (
+          <Card key={g.id} c={c} style={{ borderLeft: `4px solid ${cores.cor}`, padding: "16px 16px 16px 14px" }}>
+            {isEditing ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <input style={inputStyle} value={editForm.nome} onChange={(e) => setEditForm({ ...editForm, nome: e.target.value })} placeholder="Nome" />
+                <input style={inputStyle} type="number" value={editForm.valor} onChange={(e) => setEditForm({ ...editForm, valor: e.target.value })} placeholder="Valor (R$)" />
+                <input style={inputStyle} type="number" min="1" max="31" value={editForm.dia_vencimento} onChange={(e) => setEditForm({ ...editForm, dia_vencimento: e.target.value })} placeholder="Dia do vencimento (1-31)" />
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button onClick={() => saveEdit(g.id)} style={{ flex: 1, background: PALETTE.purple, border: "none", borderRadius: 10, padding: "10px", color: "#fff", fontWeight: 600, cursor: "pointer" }}>Salvar</button>
+                  <button onClick={() => setEditingId(null)} style={{ flex: 1, background: c.surface2, border: "none", borderRadius: 10, padding: "10px", color: c.text, cursor: "pointer" }}>Cancelar</button>
+                </div>
+              </div>
+            ) : (
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 14.5, fontWeight: 600, marginBottom: 2 }}>{g.nome}</div>
+                  <div style={{ fontSize: 11.5, color: c.muted, marginBottom: 6 }}>{labelVencimento(g)}</div>
+                  <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 9px", borderRadius: 999, background: cores.bg, color: cores.cor }}>
+                    {g.pago_este_mes ? "✓ Pago este mês" : status === "red" ? "⚠ Atrasado" : status === "orange" ? "● Vence em breve" : "Em dia"}
+                  </span>
+                </div>
+                <div className="num" style={{ fontSize: 15, textAlign: "right" }}>{money(g.valor)}</div>
+                <button
+                  onClick={() => onTogglePago(g.id, !g.pago_este_mes)}
+                  title={g.pago_este_mes ? "Desmarcar como pago" : "Marcar como pago"}
+                  style={{
+                    width: 34, height: 34, borderRadius: 999, border: "none", cursor: "pointer",
+                    background: g.pago_este_mes ? "rgba(52,211,153,0.18)" : c.surface2,
+                    color: g.pago_este_mes ? PALETTE.green : c.muted,
+                    display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+                  }}
+                >
+                  <Check size={16} />
+                </button>
+                <button onClick={() => startEdit(g)} style={{ background: "none", border: "none", cursor: "pointer", padding: 4, flexShrink: 0 }}>
+                  <Pencil size={15} color={c.muted} />
+                </button>
+                <button onClick={() => onRemove(g.id)} style={{ background: "none", border: "none", cursor: "pointer", padding: 4, flexShrink: 0 }}>
+                  <Trash2 size={15} color={PALETTE.red} />
+                </button>
+              </div>
+            )}
+          </Card>
+        );
+      })}
+
+      <Card c={c} style={{ border: `1.5px dashed ${c.surface2}` }}>
+        <div className="display" style={{ fontWeight: 600, marginBottom: 12, fontSize: 14.5, display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{ width: 22, height: 22, borderRadius: 99, background: PALETTE.purple, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, fontWeight: 700 }}>+</span>
+          Novo gasto fixo
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <input style={inputStyle} placeholder="Nome (ex: Aluguel)" value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} />
+          <input style={inputStyle} type="number" placeholder="Valor (R$)" value={form.valor} onChange={(e) => setForm({ ...form, valor: e.target.value })} />
+          <input style={inputStyle} type="number" min="1" max="31" placeholder="Dia do vencimento (1-31)" value={form.dia_vencimento} onChange={(e) => setForm({ ...form, dia_vencimento: e.target.value })} />
+          <button onClick={submit} style={{ background: PALETTE.purple, border: "none", borderRadius: 12, padding: "12px", color: "#fff", fontWeight: 600, cursor: "pointer" }}>Salvar</button>
+        </div>
+      </Card>
+
+      <div style={{ fontSize: 11, color: c.muted, textAlign: "center", padding: "0 10px", lineHeight: 1.6 }}>
+        Toque no ✓ ao lado de cada conta para marcar como <b>paga</b>. No início de cada mês, marque novamente as contas que forem pagas.
+      </div>
     </div>
   );
 }
@@ -839,7 +1024,7 @@ function Relatorios({ c, byCategory, pieColors, monthCompare, totalIncome, total
 
 // ---------- Assistente IA (mesmo motor que rodaria no WhatsApp) ----------
 
-function AssistenteIA({ c, dark, balance, addIncome, addExpense , session}) {
+function AssistenteIA({ c, dark, balance, addIncome, addExpense, session }) {
   const [messages, setMessages] = useState([
     { from: "bot", text: "Oi! Sou o Agente Financeiro. Me conta seus gastos e ganhos como se estivesse me mandando um WhatsApp — eu registro tudo pra você. Ex: \"gastei 35 no mercado\" ou \"recebi 500 de pix\"." },
   ]);
